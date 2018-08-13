@@ -81,7 +81,7 @@ RUN mkdir \
     #/var/log/supervisor
 
 ## Apache configuration
-COPY apache.conf /etc/apache2/sites-enabled/000-default.conf
+COPY apache.conf /etc/apache2/sites-available/000-default.conf
 
 ## PHP configuration
 COPY php.ini /etc/php/7.0/apache2/conf.d/
