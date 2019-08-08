@@ -1,1 +1,1 @@
-# docker-php-ssh
+# docker-php-ssh-smb
