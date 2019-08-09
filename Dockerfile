@@ -107,6 +107,8 @@ COPY config/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 #  && chown -R www-data:www-data ${DOCROOT}/wordpress
 
 ## Drupal
+## https://www.drupal.org/download-latest/zip
+## https://www.drupal.org/download-latest/tar.gz
 #RUN curl -fSL "https://ftp.drupal.org/files/projects/drupal-${DRUPAL_VERSION}.tar.gz" -o drupal.tar.gz \
 #  && mkdir ${DOCROOT}/drupal \
 #  && tar -xz --strip-components=1 -f drupal.tar.gz -C ${DOCROOT}/drupal \
