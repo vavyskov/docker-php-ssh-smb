@@ -72,7 +72,9 @@ apt-get install -y --no-install-recommends \
 #autocmd BufNewFile,BufRead Vagrantfile set ft=ruby
 #EOF
 
-
+## Nano
+apt-get install -y --no-install-recommends \
+  nano
 
 ## MC
 apt-get install -y --no-install-recommends \

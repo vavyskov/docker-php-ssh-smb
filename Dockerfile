@@ -1,11 +1,11 @@
 ## Fix: Remove error building note "debconf: delaying package configuration, since apt-utils is not installed"
 
-## Variables
-ARG DEBIAN_VERSION=latest
+## Variables (php:7.3-apache | php:7.2-apache-stretch)
+ARG PHP_VERSION=7.2-apache-stretch
 ARG WORKGROUP=VEVVA
 
 ## Base image
-FROM debian:${DEBIAN_VERSION}
+FROM php:${PHP_VERSION}
 
 ## Environment
 ENV WORKSPACE=/var/www/html
@@ -32,14 +32,42 @@ ARG DEBIAN_FRONTEND=noninteractive
 #RUN echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selections
 RUN apt-get install --assume-yes apt-utils
 
-## Instalation
-COPY config/* /tmp/
-RUN chmod u+x /tmp/* \
-    && /tmp/debian.sh \
-    && /tmp/apache.sh \
-    && /tmp/php.sh \
-    && /tmp/samba.sh ${WORKGROUP} \
+## Debian
+COPY config/debian.sh /tmp/
+RUN chmod u+x /tmp/debian.sh \
+    && /tmp/debian.sh
+
+## Apache
+COPY config/apache.sh /tmp/
+COPY config/apache-dev.conf /tmp/
+COPY config/public.tar.gz /tmp/
+RUN chmod u+x /tmp/apache.sh \
+    && /tmp/apache.sh
+
+## PHP
+COPY config/php.sh /tmp/
+COPY config/php-dev.ini /tmp/
+RUN chmod u+x /tmp/php.sh \
+    && /tmp/php.sh
+
+## Samba
+COPY config/samba.sh /tmp/
+COPY config/smb.conf /tmp/
+RUN chmod u+x /tmp/samba.sh \
+    && /tmp/samba.sh ${WORKGROUP}
+
+## Nodejs
+COPY config/nodejs.sh /tmp/
+RUN chmod u+x /tmp/nodejs.sh \
+    && /tmp/nodejs.sh
+
+## Drupal tools
+COPY config/drupal-tools.sh /tmp/
+RUN chmod u+x /tmp/drupal-tools.sh \
     && /tmp/drupal-tools.sh
+
+## Public folder (webserver-info)
+#COPY ./public/ /var/www/html/public/
 
 ## Apache configuration (Variable from script file does not work!)
 COPY config/apache-dev.conf /etc/apache2/sites-available/000-default.conf
@@ -51,8 +79,76 @@ RUN (echo ${SAMBA_PASSWD}; echo ${SAMBA_PASSWD}) | smbpasswd -s -a ${SAMBA_USER}
 
 
 
-## PHP extension
-#RUN docker-php-ext-install gd opcache zip mbstring xml curl
+
+
+
+
+## PHP extensions
+RUN apt-get install -y --no-install-recommends \
+        ## php-zip
+        libzip-dev \
+        zip \
+        ## php-gd
+        libfreetype6-dev \
+        libjpeg62-turbo-dev \
+        libpng-dev \
+        ## php-intl
+        zlib1g-dev \
+        libicu-dev \
+        g++ \
+        ## php-pgsql
+        libpq-dev \
+        ## php-ldap
+        libldap2-dev \
+        ## php-imagick
+        libmagickwand-dev \
+    && docker-php-ext-configure zip --with-libzip \
+    && docker-php-ext-configure gd --with-freetype-dir=/usr/include/ --with-jpeg-dir=/usr/include/ \
+    && docker-php-ext-configure ldap --with-libdir=lib/x86_64-linux-gnu \
+    #&& docker-php-ext-configure intl \
+	&& docker-php-ext-install -j$(nproc) \
+	    opcache \
+        pdo_mysql \
+        mysqli \
+	    zip \
+	    gd \
+	    intl \
+	    pdo_pgsql \
+	    ldap \
+    && pecl install \
+        imagick \
+        mongodb \
+        apcu \
+        xdebug \
+    && docker-php-ext-enable \
+        imagick \
+        mongodb \
+        apcu \
+        xdebug
+
+## Build and install the Uploadprogress PHP extension.
+## See http://git.php.net/?p=pecl/php/uploadprogress.git
+RUN curl -fsSL 'http://git.php.net/?p=pecl/php/uploadprogress.git;a=snapshot;h=95d8a0fd4554e10c215d3ab301e901bd8f99c5d9;sf=tgz' -o php-uploadprogress.tar.gz \
+  && tar -xzf php-uploadprogress.tar.gz \
+  && rm php-uploadprogress.tar.gz \
+  && ( \
+    cd uploadprogress-95d8a0f \
+    && phpize \
+    && ./configure --enable-uploadprogress \
+    && make \
+    && make install \
+  ) \
+  && rm -r uploadprogress-95d8a0f \
+  && docker-php-ext-enable uploadprogress
+
+
+
+
+
+## Imagemagick
+RUN apt-get install -y --no-install-recommends \
+        imagemagick
+
 
 
 
@@ -143,7 +239,9 @@ COPY config/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
 
 # Cleaning copied files (install and config)
-RUN /tmp/purge.sh
+COPY config/purge.sh /tmp/
+RUN chmod u+x /tmp/purge.sh \
+    && /tmp/purge.sh
 
 
 
@@ -170,6 +268,9 @@ EXPOSE 80 22 445
 
 ## SSH start
 #CMD ["/usr/sbin/sshd", "-D"]
+
+## Samba start
+#CMD ["/usr/sbin/smbd", "-D"]
 
 ## Supervisor
 CMD ["/usr/bin/supervisord"]

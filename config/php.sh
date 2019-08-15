@@ -2,44 +2,13 @@
 #set -eu
 set -e
 
-PHP_VERSION=7.3
+## Detect PHP version
+PHP_VERSION=$(php -v | cut -d" " -f2 | cut -d"." -f1,2 | head -1)
 
 ## Current script directory path
 CURRENT_DIRECTORY=$(dirname $0)
 
 ## -----------------------------------------------------------------------------
-
-## PHP installation
-##
-## Show list of PHP modules
-## dpkg --get-selections | grep -v deinstall | grep php
-##
-apt-get install -y --no-install-recommends \
-  php${PHP_VERSION} \
-  php${PHP_VERSION}-gd \
-  php${PHP_VERSION}-mbstring \
-  php${PHP_VERSION}-opcache \
-  php${PHP_VERSION}-xml \
-  php${PHP_VERSION}-curl \
-  php${PHP_VERSION}-zip \
-  php-uploadprogress \
-  php-apcu \
-  php${PHP_VERSION}-ldap \
-  php${PHP_VERSION}-intl \
-  php${PHP_VERSION}-mysql \
-  php${PHP_VERSION}-sqlite3 \
-  php${PHP_VERSION}-pgsql
-  # pdo_mysql \
-  # mysqli \
-  # php${PHP_VERSION}-cli \
-  # libpng${PHP_VERSION}-dev \
-  # php${PHP_VERSION}-fpm \
-  # php${PHP_VERSION}-bz2 \
-  # php${PHP_VERSION}-imap \
-  # php${PHP_VERSION}-xdebug \
-
-
-
 
 
 ## https://github.com/krakjoe/apcu/blob/master/apc.php (APCu info page)
@@ -47,10 +16,13 @@ apt-get install -y --no-install-recommends \
 
 
 ## Time zone
-sed -i 's/;date.timezone =/date.timezone = "Europe\/Prague"/' /etc/php/${PHP_VERSION}/cli/php.ini
+#sed -i 's/;date.timezone =/date.timezone = "Europe\/Prague"/' /etc/php/${PHP_VERSION}/cli/php.ini
+sed -i 's/;date.timezone =/date.timezone = "Europe\/Prague"/' /usr/local/etc/php/php.ini-development
+sed -i 's/;date.timezone =/date.timezone = "Europe\/Prague"/' /usr/local/etc/php/php.ini-production
 
 ## PHP configuration
-cat << EOF > /etc/php/${PHP_VERSION}/apache2/conf.d/php-default.ini
+#cat << EOF > /etc/php/${PHP_VERSION}/apache2/conf.d/php-default.ini
+cat << EOF > /usr/local/etc/php/conf.d/php-default.ini
 [Time zone]
 date.timezone="Europe/Prague"
 
@@ -96,7 +68,8 @@ sendmail_path=/usr/sbin/sendmail -t -i
 EOF
 
 ## PHP configuration
-cp $CURRENT_DIRECTORY/php-dev.ini /etc/php/${PHP_VERSION}/apache2/conf.d/
+#cp $CURRENT_DIRECTORY/php-dev.ini /etc/php/${PHP_VERSION}/apache2/conf.d/
+cp $CURRENT_DIRECTORY/php-dev.ini /usr/local/etc/php/conf.d/
 
 
 
