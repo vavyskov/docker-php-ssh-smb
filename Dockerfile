@@ -1,7 +1,7 @@
 ## Fix: Remove error building note "debconf: delaying package configuration, since apt-utils is not installed"
 
 ## Variables (php:7.3-apache | php:7.2-apache-stretch)
-ARG PHP_VERSION=7.2-apache-stretch
+ARG PHP_VERSION=apache
 ARG WORKGROUP=VEVVA
 
 ## Base image
